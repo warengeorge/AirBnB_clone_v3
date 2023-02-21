@@ -1,70 +1,43 @@
-<<<<<<< HEAD
-from flask import Flask
-from models import storage
-from api.v1.views import app_views
-from flaskCORS import CORS
-import os
-
-app = Flask(__name__)
-app.register__blueprint(app_views)
-
-def teardown_appcontext(self):
-    """ a method to handle teardown to close """
-    storage.close()
-
-
-if __name__ == "__main__":
-    app_host = os.getenv("HBNB_API_HOST", '0.0.0.0')
-    app_port = int(os.getenv("HBNB_API_PORT", '5000'))
-    app.run(host = app_host, port=app_port, threaded = True)
-=======
 #!/usr/bin/python3
-'''A Flask web application API.
-'''
-import os
-from flask import Flask, make_response, jsonify
-from flask_cors import CORS
-
+"""
+This module contains the principal application
+"""
 from models import storage
 from api.v1.views import app_views
-
+from flask import Flask, make_response, jsonify
+from os import getenv
+from flask_cors import CORS
+from flasgger import Swagger
 
 app = Flask(__name__)
-'''middlewares and connectiviy defintions'''
-app_host = os.getenv('HBNB_API_HOST', '0.0.0.0')
-app_port = int(os.getenv('HBNB_API_PORT', '5000'))
-app.url_map.strict_slashes = False
+app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
 app.register_blueprint(app_views)
-CORS(app, resources={'/*': {'origins': app_host}})
+cors = CORS(app, resources={r"/api/*": {"origins": "0.0.0.0"}})
 
 
 @app.teardown_appcontext
-def teardown_flask(exception):
-    '''a tear down to close storage'''
+def close_db(obj):
+    """ calls methods close() """
     storage.close()
 
 
 @app.errorhandler(404)
-def error_404(error):
-    '''Handles the 404 HTTP error code.'''
-    return jsonify(error='Not found'), 404
+def page_not_foun(error):
+    """ Loads a custom 404 page not found """
+    return make_response(jsonify({"error": "Not found"}), 404)
 
 
-@app.errorhandler(400)
-def error_400(error):
-    '''Handles the 400 HTTP error code.'''
-    message = 'Bad request'
-    if isinstance(error, Exception) and hasattr(error, 'description'):
-        message = error.description
-    return jsonify(error=message), 400
+app.config['SWAGGER'] = {
+    'title': 'AirBnB clone - RESTful API',
+    'description': 'This is the api that was created for the hbnb restful api project,\
+    all the documentation will be shown below',
+    'uiversion': 3}
 
+Swagger(app)
 
-if __name__ == '__main__':
-    app_host = os.getenv('HBNB_API_HOST', '0.0.0.0')
-    app_port = int(os.getenv('HBNB_API_PORT', '5000'))
-    app.run(
-        host=app_host,
-        port=app_port,
-        threaded=True
-    )
->>>>>>> 268187a25d69b1ed5717745deb49c08d8d785428
+if __name__ == "__main__":
+
+    host = getenv('HBNB_API_HOST', default='0.0.0.0')
+    port = getenv('HBNB_API_PORT', default=5000)
+
+    app.run(host, int(port), threaded=True)
